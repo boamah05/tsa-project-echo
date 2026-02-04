@@ -1,0 +1,2 @@
+get single emotion: /getEmotion 
+get emotion over a time interval: /getEmotion/seconds=(number of seconds you want)
