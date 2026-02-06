@@ -11,9 +11,9 @@ def root():
 def getEm():
     return getEmotion()
 
-@app.route('/getEmotionLoop/seconds=<int:seconds>')
-def getEmLoop(seconds):
-    return getEmotionLoop(seconds)
+@app.route('/getEmotionLoop')
+def getEmLoop():
+    return getEmotionLoop()
 
 
 if __name__ == "__main__":
