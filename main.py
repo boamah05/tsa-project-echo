@@ -1,5 +1,6 @@
 from flask import Flask
 from cvstuff import getEmotion, getEmotionLoop
+from surroundSound import classify_sound
 app = Flask(__name__)
 
 @app.route('/')
