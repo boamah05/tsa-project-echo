@@ -5,27 +5,31 @@ import CoreML
 
 final class SurroundSoundClassifier: NSObject {
 
-
     struct Result {
         let label: String
         let confidence: Double
         let direction: SoundDirectionManager.Direction
     }
 
-
     var onResult: ((Result) -> Void)?
-
 
     private let audioEngine = AVAudioEngine()
     private var analyzer: SNAudioStreamAnalyzer?
     private var classificationRequest: SNClassifySoundRequest?
 
     private let directionManager = SoundDirectionManager()
-
     private var latestDirection: SoundDirectionManager.Direction = .unknown
 
     private var lastLabel: String?
     private var lastEmitTime: Date = .distantPast
+
+
+    private let activeDuration: TimeInterval = 5.0
+
+    private let restDuration: TimeInterval = 5.0
+
+    private var isClassificationActive: Bool = false
+    private var intervalTimer: DispatchSourceTimer?
 
 
     func start() throws {
@@ -34,10 +38,15 @@ final class SurroundSoundClassifier: NSObject {
         installAudioTap()
         try startEngine()
 
+        startIntervalLoop()
+
         print(" SurroundSoundClassifier started yo yo")
     }
 
     func stop() {
+        intervalTimer?.cancel()
+        intervalTimer = nil
+
         audioEngine.inputNode.removeTap(onBus: 0)
         audioEngine.stop()
 
@@ -50,7 +59,6 @@ final class SurroundSoundClassifier: NSObject {
 
     private func configureAudioSession() throws {
         let session = AVAudioSession.sharedInstance()
-
         try session.setCategory(.record, mode: .measurement, options: [.duckOthers])
         try session.setActive(true, options: .notifyOthersOnDeactivation)
     }
@@ -85,13 +93,50 @@ final class SurroundSoundClassifier: NSObject {
 
             self.latestDirection = self.directionManager.estimateDirection(from: buffer)
 
-            self.analyzer.analyze(buffer, atAudioFramePosition: time.sampleTime)
+            guard self.isClassificationActive else { return }
+
+            self.analyzer?.analyze(buffer, atAudioFramePosition: time.sampleTime)
         }
     }
 
     private func startEngine() throws {
         audioEngine.prepare()
         try audioEngine.start()
+    }
+
+    // Interval Loop
+
+    private func startIntervalLoop() {
+        isClassification = true
+
+        let timer = DispatchSource.makeTimerSource(queue: DispatchQueue.global(qos: .userInitiated))
+        let cycle = activeDuration + restDuration
+
+        let startTime = Date()
+
+        timer.schedule(deadline: .now(), repeating: 0.25)
+
+        timer.setEventHandler { [weak self] in
+            guard let self = self else { return }
+
+            let elapsed = Date().timeIntervalSince(startTime)
+            let position = elapsed.truncatingRemainder(dividingBy: cycle)
+
+            let shouldBeActive = position < self.activeDuration
+
+            if self.isClassification != shouldBeActive {
+                self.isClassification = shouldBeActive
+
+                if shouldBeActive {
+                    print("Classification ACTIVE (5s)")
+                } else {
+                    print("Classification PAUSED (5s)")
+                }
+            }
+        }
+
+        intervalTimer = timer
+        timer.resume()
     }
 
 
@@ -143,6 +188,6 @@ private final class ResultsObserver: NSObject, SNResultsObserving {
     }
 
     func requestDidComplete(_ request: SNRequest) {
-        print("ℹ SoundAnalysis request completed")
+        print(" SoundAnalysis request completed")
     }
 }
