@@ -24,9 +24,9 @@ final class SurroundSoundClassifier: NSObject {
     private var lastEmitTime: Date = .distantPast
 
 
-    private let activeDuration: TimeInterval = 5.0
+    private let activeDuration: TimeInterval = 2.0
 
-    private let restDuration: TimeInterval = 5.0
+    private let restDuration: TimeInterval = 2.0
 
     private var isClassificationActive: Bool = false
     private var intervalTimer: DispatchSourceTimer?
