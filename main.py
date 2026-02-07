@@ -1,20 +1,21 @@
-from flask import Flask
+from flask import Flask, jsonify
 from cvstuff import getEmotion, getEmotionLoop
-from surroundSound import classify_sound
-app = Flask(__name__)
+import requests
 
-@app.route('/')
+app = Flask(__name__)
+ngrok_link = "https://3010-70-123-36-145.ngrok-free.app/"
+
+@app.route("/")
 def root():
     return "root directory"
 
-@app.route('/getEmotion')
+@app.route("/getEmotion")
 def getEm():
-    return getEmotion()
+    return requests.get(f"{ngrok_link}/getEmotion").text
 
-@app.route('/getEmotionLoop')
-def getEmLoop():
-    return getEmotionLoop()
-
+@app.route("/getEmotionLoop")
+def getEmLoop(seconds):
+    return requests.get(f"{ngrok_link}/getEmotionLoop").text
 
 if __name__ == "__main__":
     app.run()
